@@ -77,3 +77,52 @@ def test_bot_move_hard_takes_win_and_medium_blocks(client):
 def test_bot_move_rejects_bad_difficulty(client):
     res = client.post("/api/bot-move", json={"board": EMPTY, "turn": "X", "difficulty": "godlike"})
     assert res.status_code == 400
+
+
+# ---- Insight langkah (bahan dialog bot) ------------------------------------
+def test_move_returns_insight(client):
+    data = client.post("/api/move", json={"board": EMPTY, "turn": "X", "position": 4}).get_json()
+    assert data["insight"] == {"kind": "normal", "blocks": False, "threats": 0}
+
+
+def test_move_insight_reports_player_block(client):
+    board = ["X", "X", "", "O", "", "", "", "", ""]  # X mengancam kotak 3; giliran O
+    data = client.post("/api/move", json={"board": board, "turn": "O", "position": 2}).get_json()
+    assert data["insight"]["kind"] == "block" and data["insight"]["blocks"] is True
+
+
+def test_bot_move_insight_for_win_and_block(client):
+    win = ["O", "O", "", "X", "X", "", "", "", ""]
+    data = client.post("/api/bot-move", json={"board": win, "turn": "O", "difficulty": "hard"}).get_json()
+    assert data["insight"]["kind"] == "win"
+
+    block = ["X", "X", "", "", "O", "", "", "", ""]
+    data = client.post("/api/bot-move", json={"board": block, "turn": "O", "difficulty": "hard"}).get_json()
+    assert data["move"] == 2 and data["insight"]["blocks"] is True
+
+
+# ---- Halaman: Settings & dialog --------------------------------------------
+def test_settings_dialog_is_on_menu_and_game_pages(client):
+    for url in ("/", "/game?mode=pvc&difficulty=easy", "/game?mode=pvp"):
+        html = client.get(url).get_data(as_text=True)
+        assert 'id="settings-dialog"' in html and 'id="settings-open"' in html
+        assert 'id="vol-master"' in html and 'id="sw-bgm"' in html and 'id="sw-sfx"' in html
+
+
+def test_all_board_themes_are_offered(client):
+    html = client.get("/").get_data(as_text=True)
+    for theme in ("classic", "cyberpunk", "wooden", "pastel"):
+        assert f'name="board-theme" value="{theme}"' in html
+        assert f'[data-theme="{theme}"]' in client.get("/static/css/style.css").get_data(as_text=True)
+
+
+def test_bot_dialog_only_in_player_vs_computer(client):
+    pvc = client.get("/game?mode=pvc&difficulty=hard").get_data(as_text=True)
+    pvp = client.get("/game?mode=pvp").get_data(as_text=True)
+    assert 'id="dialog"' in pvc and "bot-dialogue.js" in pvc
+    assert 'id="dialog"' not in pvp and "bot-dialogue.js" not in pvp
+
+
+def test_new_static_assets_are_served(client):
+    for name in ("audio", "theme", "settings", "bot-dialogue", "chatbox", "game"):
+        assert client.get(f"/static/js/{name}.js").status_code == 200

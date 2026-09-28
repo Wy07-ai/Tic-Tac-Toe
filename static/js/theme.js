@@ -1,26 +1,42 @@
+/*
+ * TTTTheme: manajer tema papan.
+ * Tema diterapkan lewat atribut <html data-theme="..."> sehingga seluruh
+ * tampilan (latar, grid, simbol X/O) berubah instan lewat CSS variables.
+ * Skrip kecil di <head> (base.html) sudah menerapkan tema tersimpan sebelum
+ * halaman digambar; berkas ini mengurus pergantian tema dan penyimpanannya.
+ */
 (() => {
-  const button = document.getElementById("theme-toggle");
+  "use strict";
+
+  const STORAGE_KEY = "ttt:theme";
+  const root = document.documentElement;
   const meta = document.getElementById("theme-color-meta");
-  const storageKey = "ttt:theme";
-  let theme = "light";
+  const options = [...document.querySelectorAll('input[name="board-theme"]')];
+  const colors = Object.fromEntries(options.map((input) => [input.value, input.dataset.color]));
+  const listeners = new Set();
 
-  try {
-    if (localStorage.getItem(storageKey) === "dark") theme = "dark";
-  } catch {}
+  const isValid = (id) => Object.prototype.hasOwnProperty.call(colors, id);
 
-  function applyTheme() {
-    const isDark = theme === "dark";
-    document.documentElement.dataset.theme = theme;
-    button.textContent = isDark ? "Mode terang" : "Mode gelap";
-    button.setAttribute("aria-pressed", String(isDark));
-    meta.content = isDark ? "#141a25" : "#eef2f8";
+  function apply(id) {
+    root.dataset.theme = id;
+    if (meta && colors[id]) meta.content = colors[id];
   }
 
-  button.addEventListener("click", () => {
-    theme = theme === "dark" ? "light" : "dark";
-    try { localStorage.setItem(storageKey, theme); } catch {}
-    applyTheme();
-  });
+  function set(id, { persist = true } = {}) {
+    if (!isValid(id)) return;
+    apply(id);
+    if (persist) {
+      try { localStorage.setItem(STORAGE_KEY, id); } catch { /* abaikan */ }
+    }
+    listeners.forEach((fn) => fn(id));
+  }
 
-  applyTheme();
+  window.TTTTheme = {
+    get current() { return root.dataset.theme; },
+    set,
+    onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+  };
+
+  // Selaraskan dengan tema yang sudah diterapkan skrip di <head>.
+  if (isValid(root.dataset.theme)) apply(root.dataset.theme);
 })();

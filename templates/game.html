@@ -2,7 +2,7 @@
 {% block title %}Tic Tac Toe: bermain{% endblock %}
 {% block body_class %}page-game{% endblock %}
 {% block content %}
-<main class="game" id="game"
+<main class="game{% if cfg.mode == 'pvc' %} has-dialog{% endif %}" id="game"
       data-mode="{{ cfg.mode }}" data-difficulty="{{ cfg.difficulty }}"
       data-me="{{ cfg.mark }}" data-first="{{ cfg.first }}"
       data-move-url="{{ url_for('api_move') }}" data-bot-url="{{ url_for('api_bot_move') }}"
@@ -31,11 +31,46 @@
     <div class="cells" id="cells"></div>
   </div>
 
+  {% if cfg.mode == 'pvc' %}
+  <aside class="dialog" id="dialog" data-mood="neutral" aria-label="Dialog dengan bot">
+    <header class="dialog-head">
+      <div class="avatar" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <line class="av-antenna" x1="32" y1="4" x2="32" y2="13"/>
+          <circle class="av-bulb" cx="32" cy="5" r="3.2"/>
+          <rect class="av-head" x="8" y="13" width="48" height="42" rx="13"/>
+          <g class="av-eyes">
+            <circle class="av-eye av-eye-l" cx="22" cy="31" r="5"/>
+            <circle class="av-eye av-eye-r" cx="42" cy="31" r="5"/>
+          </g>
+          <path class="av-brow av-brow-l" d="M15 21L27 24"/>
+          <path class="av-brow av-brow-r" d="M49 21L37 24"/>
+          <path class="av-mouth av-mouth-neutral" d="M23 44H41"/>
+          <path class="av-mouth av-mouth-happy" d="M22 42Q32 52 42 42"/>
+          <path class="av-mouth av-mouth-smug" d="M23 44Q34 46 42 39"/>
+          <path class="av-mouth av-mouth-worried" d="M22 46Q27 41 32 46T42 46"/>
+          <path class="av-mouth av-mouth-sad" d="M22 48Q32 39 42 48"/>
+        </svg>
+      </div>
+      <div class="dialog-who">
+        <strong id="bot-name">Bot</strong>
+        <span id="bot-title"></span>
+      </div>
+    </header>
+    <div class="dialog-log" id="dialog-log" role="log" aria-live="polite" aria-label="Percakapan dengan bot" tabindex="0"></div>
+  </aside>
+  {% endif %}
+
   <div class="actions">
     <button class="btn btn-primary" id="btn-again" type="button">Main Lagi</button>
-    <button class="btn btn-ghost sound-toggle" id="sound-toggle" type="button" aria-pressed="true">Suara: aktif</button>
     <a class="btn btn-ghost" id="btn-menu" href="{{ url_for('menu') }}">Kembali ke Menu Utama</a>
   </div>
 </main>
 {% endblock %}
-{% block scripts %}<script src="{{ url_for('static', filename='js/game.js') }}" defer></script>{% endblock %}
+{% block scripts %}
+{% if cfg.mode == 'pvc' %}
+<script src="{{ url_for('static', filename='js/bot-dialogue.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/chatbox.js') }}" defer></script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/game.js') }}" defer></script>
+{% endblock %}

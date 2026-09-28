@@ -11,12 +11,23 @@ from typing import Any
 
 from flask import Flask, jsonify, redirect, render_template, request, url_for
 
+from .analysis import describe_move
 from .board import Board, InvalidMoveError, Mark
 from .player import Difficulty, create_bot
 
 ROOT = Path(__file__).resolve().parent.parent
 MODES = ("pvc", "pvp")
 FIRST_CHOICES = ("me", "opp")  # "me" = pemain 1 jalan duluan
+
+# Tema papan. `color` = warna latar (--paper) tiap tema di static/css/style.css,
+# dipakai untuk <meta name="theme-color">. Tema pertama adalah default.
+THEMES: tuple[dict[str, str], ...] = (
+    {"id": "classic", "name": "Classic Dark", "desc": "Gelap bersih, aksen jingga dan biru.", "color": "#141a25"},
+    {"id": "cyberpunk", "name": "Cyberpunk Neon", "desc": "Grid neon menyala di malam kota.", "color": "#0a0618"},
+    {"id": "wooden", "name": "Wooden Retro", "desc": "Papan kayu ukir ala permainan jadul.", "color": "#d3b083"},
+    {"id": "pastel", "name": "Pastel Minimal", "desc": "Terang, lembut, dan rapi.", "color": "#fbf1f4"},
+)
+DEFAULT_THEME = THEMES[0]["id"]
 
 
 class ApiError(Exception):
@@ -92,6 +103,14 @@ def create_app() -> Flask:
         static_folder=str(ROOT / "static"),
     )
 
+    @app.context_processor
+    def inject_ui_config():
+        return {
+            "themes": THEMES,
+            "default_theme": DEFAULT_THEME,
+            "theme_colors": {t["id"]: t["color"] for t in THEMES},
+        }
+
     @app.errorhandler(ApiError)
     def handle_api_error(err: ApiError):
         return jsonify(error=str(err)), 400
@@ -115,11 +134,13 @@ def create_app() -> Flask:
         position = payload.get("position")
         if not isinstance(position, int) or isinstance(position, bool) or not 0 <= position <= 8:
             raise ApiError("Posisi kotak ('position') harus angka 0 sampai 8.")
+        before = board.copy()
         try:
             board.place(position + 1, turn)
         except InvalidMoveError as err:
             raise ApiError(str(err)) from None
-        return jsonify(_snapshot(board, turn) | {"move": position})
+        insight = describe_move(before, position + 1, turn).as_dict()
+        return jsonify(_snapshot(board, turn) | {"move": position, "insight": insight})
 
     @app.post("/api/bot-move")
     def api_bot_move():
@@ -131,7 +152,9 @@ def create_app() -> Flask:
         except ValueError as err:
             raise ApiError(str(err)) from None
         move = create_bot(difficulty, turn).choose_move(board)
+        before = board.copy()
         board.place(move, turn)
-        return jsonify(_snapshot(board, turn) | {"move": move - 1})
+        insight = describe_move(before, move, turn).as_dict()
+        return jsonify(_snapshot(board, turn) | {"move": move - 1, "insight": insight})
 
     return app

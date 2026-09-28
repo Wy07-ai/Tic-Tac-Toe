@@ -21,64 +21,30 @@
   const scoreEls = { a: byId("score-a"), d: byId("score-d"), b: byId("score-b") };
   function byId(id) { return document.getElementById(id); }
 
-  const soundToggle = byId("sound-toggle");
-  const soundStorageKey = "ttt:sound-enabled";
-  let soundEnabled = true;
-  let audioContext;
-  try { soundEnabled = localStorage.getItem(soundStorageKey) !== "false"; } catch {}
+  // ---- Suara: mesin global ada di audio.js (volume/mute diatur lewat Pengaturan) ----
+  const playSound = (name) => TTTAudio.sfx(name);
 
-  function updateSoundToggle() {
-    soundToggle.textContent = `Suara: ${soundEnabled ? "aktif" : "mati"}`;
-    soundToggle.setAttribute("aria-pressed", String(soundEnabled));
+  // ---- Dialog bot (hanya Player vs Komputer) ---------------------------------------
+  const chatRoot = byId("dialog");
+  let chat = null;
+  let speaker = null;
+  let lastPlayerKind = null; // insight langkah pemain terakhir (untuk reaksi bot)
+  if (isPvc && chatRoot && window.BotDialogue && window.TTTChat) {
+    speaker = BotDialogue.createSpeaker(cfg.difficulty);
+    chatRoot.dataset.difficulty = speaker.level;
+    byId("bot-name").textContent = speaker.persona.name;
+    byId("bot-title").textContent = speaker.persona.title;
+    chat = TTTChat.create(chatRoot, {
+      onBlip: () => TTTAudio.sfx("blip", { pitch: 0.9 + Math.random() * 0.35 }),
+      onMessage: () => TTTAudio.sfx("notify"),
+    });
   }
 
-  function getAudioContext() {
-    if (!soundEnabled) return;
-    const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextConstructor) return;
-    try {
-      audioContext ||= new AudioContextConstructor();
-      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
-      return audioContext;
-    } catch {
-      return;
-    }
+  function botSay(category) {
+    if (!chat || !category) return;
+    const reply = speaker.line(category);
+    if (reply) chat.say(reply.text, reply.mood);
   }
-
-  function playSound(kind) {
-    const context = getAudioContext();
-    if (!context) return;
-
-    const notes = {
-      move: [[440, 0, 0.07], [660, 0.055, 0.08]],
-      win: [[523, 0, 0.12], [659, 0.12, 0.12], [784, 0.24, 0.2]],
-      loss: [[392, 0, 0.13], [330, 0.14, 0.13], [262, 0.28, 0.2]],
-      draw: [[392, 0, 0.1], [392, 0.14, 0.1]],
-      restart: [[440, 0, 0.08]],
-    }[kind];
-
-    for (const [frequency, offset, duration] of notes) {
-      const start = context.currentTime + offset;
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      oscillator.type = "sine";
-      oscillator.frequency.value = frequency;
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.12, start + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(start);
-      oscillator.stop(start + duration);
-    }
-  }
-
-  soundToggle.addEventListener("click", () => {
-    soundEnabled = !soundEnabled;
-    try { localStorage.setItem(soundStorageKey, String(soundEnabled)); } catch {}
-    updateSoundToggle();
-    if (soundEnabled) getAudioContext();
-  });
 
   const storageKey = "ttt:" + [cfg.mode, cfg.difficulty, cfg.me, cfg.first].join("-");
   let scores = loadScores();
@@ -197,12 +163,24 @@
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   function apply(data) {
+    const moverIsBot = isBot(turn);
     board = data.board;
+    if (chat) {
+      const kind = data.insight && data.insight.kind;
+      botSay(BotDialogue.pickCategory({
+        actor: moverIsBot ? "bot" : "player",
+        status: data.status,
+        winner: data.winner ? (isBot(data.winner) ? "bot" : "player") : null,
+        kind,
+        playerKind: lastPlayerKind,
+      }));
+      lastPlayerKind = moverIsBot ? null : kind;
+    }
     if (data.status === "in_progress") {
       turn = data.next;
       render();
       setStatus(turnText());
-      playSound("move");
+      playSound(board[data.move] === "O" ? "moveO" : "moveX");
       return;
     }
     over = true;
@@ -230,7 +208,6 @@
 
   async function play(i) {
     if (over || busy || board[i] || isBot(turn)) return;
-    getAudioContext();
     busy = true;
     const current = round;
     try {
@@ -278,6 +255,13 @@
 
     render();
     setStatus(turnText());
+
+    lastPlayerKind = null;
+    if (chat) {
+      chat.flush();
+      if (round > 1) chat.system(`Ronde ${round}`);
+      botSay(round === 1 ? "start" : "rematch");
+    }
     if (isBot(turn)) botTurn();
   }
 
@@ -290,6 +274,5 @@
   });
 
   renderScores();
-  updateSoundToggle();
   newRound();
 })();
