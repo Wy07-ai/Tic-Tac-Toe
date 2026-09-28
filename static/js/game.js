@@ -21,6 +21,65 @@
   const scoreEls = { a: byId("score-a"), d: byId("score-d"), b: byId("score-b") };
   function byId(id) { return document.getElementById(id); }
 
+  const soundToggle = byId("sound-toggle");
+  const soundStorageKey = "ttt:sound-enabled";
+  let soundEnabled = true;
+  let audioContext;
+  try { soundEnabled = localStorage.getItem(soundStorageKey) !== "false"; } catch {}
+
+  function updateSoundToggle() {
+    soundToggle.textContent = `Suara: ${soundEnabled ? "aktif" : "mati"}`;
+    soundToggle.setAttribute("aria-pressed", String(soundEnabled));
+  }
+
+  function getAudioContext() {
+    if (!soundEnabled) return;
+    const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextConstructor) return;
+    try {
+      audioContext ||= new AudioContextConstructor();
+      if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+      return audioContext;
+    } catch {
+      return;
+    }
+  }
+
+  function playSound(kind) {
+    const context = getAudioContext();
+    if (!context) return;
+
+    const notes = {
+      move: [[440, 0, 0.07], [660, 0.055, 0.08]],
+      win: [[523, 0, 0.12], [659, 0.12, 0.12], [784, 0.24, 0.2]],
+      loss: [[392, 0, 0.13], [330, 0.14, 0.13], [262, 0.28, 0.2]],
+      draw: [[392, 0, 0.1], [392, 0.14, 0.1]],
+      restart: [[440, 0, 0.08]],
+    }[kind];
+
+    for (const [frequency, offset, duration] of notes) {
+      const start = context.currentTime + offset;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.12, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration);
+    }
+  }
+
+  soundToggle.addEventListener("click", () => {
+    soundEnabled = !soundEnabled;
+    try { localStorage.setItem(soundStorageKey, String(soundEnabled)); } catch {}
+    updateSoundToggle();
+    if (soundEnabled) getAudioContext();
+  });
+
   const storageKey = "ttt:" + [cfg.mode, cfg.difficulty, cfg.me, cfg.first].join("-");
   let scores = loadScores();
   let board, turn, over, busy, round = 0;
@@ -143,6 +202,7 @@
       turn = data.next;
       render();
       setStatus(turnText());
+      playSound("move");
       return;
     }
     over = true;
@@ -152,6 +212,7 @@
       const mine = data.winner === cfg.me;
       scores[mine ? "a" : "b"] += 1;
       renderScores(mine ? "a" : "b");
+      playSound(mine ? "win" : "loss");
       setStatus(
         isPvc
           ? (mine ? "Kamu menang!" : "Komputer menang.")
@@ -161,6 +222,7 @@
     } else {
       scores.d += 1;
       renderScores("d");
+      playSound("draw");
       setStatus("Seri. Papan sudah penuh.", true);
     }
     saveScores();
@@ -168,6 +230,7 @@
 
   async function play(i) {
     if (over || busy || board[i] || isBot(turn)) return;
+    getAudioContext();
     busy = true;
     const current = round;
     try {
@@ -218,11 +281,15 @@
     if (isBot(turn)) botTurn();
   }
 
-  byId("btn-again").addEventListener("click", newRound);
+  byId("btn-again").addEventListener("click", () => {
+    playSound("restart");
+    newRound();
+  });
   byId("btn-menu").addEventListener("click", () => {
     try { sessionStorage.removeItem(storageKey); } catch (e) { /* abaikan */ }
   });
 
   renderScores();
+  updateSoundToggle();
   newRound();
 })();

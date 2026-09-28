@@ -10,6 +10,17 @@
   --font: "Bricolage Grotesque", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
+:root[data-theme="dark"] {
+  --paper: #141a25;
+  --surface: #202a38;
+  --ink: #f2f5fa;
+  --muted: #b2bdcc;
+  --line: #465366;
+  --x: #ff7657;
+  --o: #69a9ff;
+  --win: #ffd260;
+}
+
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 
@@ -27,6 +38,9 @@ body {
 h1, p { margin: 0; }
 button, input { font: inherit; }
 :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+.site-controls { height: 56px; padding: 10px 20px 0; display: flex; justify-content: flex-end; }
+.theme-toggle { padding: 7px 13px; border-width: 1px; border-radius: 9px; font-size: .9rem; }
 
 /* ---- Tombol ---- */
 .btn {
@@ -47,6 +61,8 @@ button, input { font: inherit; }
 .btn-ghost { background: transparent; color: var(--ink); }
 .btn-ghost:hover { background: var(--ink); color: #fff; }
 .btn-wide { width: 100%; padding: 15px 22px; font-size: 1.05rem; }
+:root[data-theme="dark"] .btn-primary { background: #f2f5fa; color: #141a25; border-color: #f2f5fa; }
+:root[data-theme="dark"] .btn-ghost:hover { background: var(--ink); color: var(--paper); }
 
 /* ---- Animasi bersama ---- */
 @keyframes draw { to { stroke-dashoffset: 0; } }
@@ -131,6 +147,7 @@ legend { padding: 0; margin-bottom: 8px; font-weight: 700; }
 .cell.is-win .mark { animation: pulse .5s .55s ease-in-out; }
 
 .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.sound-toggle { min-width: 132px; }
 
 /* ---- Responsif ---- */
 @media (max-width: 760px) {

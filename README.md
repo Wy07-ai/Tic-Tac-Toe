@@ -8,6 +8,7 @@ Game Tic Tac Toe berbasis web dengan backend Python/Flask.
   - **Medium**: menang jika bisa, memblokir lawan (kadang lengah), selain itu acak dengan preferensi tengah/sudut
   - **Hard**: Minimax + alpha-beta pruning, tidak pernah kalah
 - Pilih simbol (X/O) dan siapa yang jalan duluan, skorboard (Menang, Seri, Kalah), animasi gambar tanda dan garis kemenangan, responsif
+- Tema terang/gelap yang tersimpan dan efek suara untuk langkah, hasil ronde, serta ronde baru
 
 ## Menjalankan
 
