@@ -12,6 +12,7 @@ Game Tic Tac Toe berbasis web dengan backend Python/Flask.
   - Audio: volume utama, mute musik latar (BGM), mute efek suara (SFX). Musik dan SFX dibuat lewat Web Audio API (tanpa berkas suara) dan berbeda karakter tiap tema
   - 4 tema papan: **Classic Dark** (default), **Cyberpunk Neon**, **Wooden Retro**, **Pastel Minimal**. Berganti instan lewat CSS variables dan tersimpan di `localStorage`
 - **Dialog bot ala RPG** (mode Player vs Komputer): Bobo (Easy), Nova (Medium), dan Zero (Hard) bereaksi terhadap alur permainan: sapaan awal, memblokir, mengancam/menjebak, pemain memblokir, dan hasil ronde. Kalimat diacak dan tidak berulang beruntun
+- Tema terang/gelap yang tersimpan dan efek suara untuk langkah, hasil ronde, serta ronde baru
 
 ## Menjalankan
 
