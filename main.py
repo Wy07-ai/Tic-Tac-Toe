@@ -8,11 +8,11 @@ from src.web import create_app
 
 HOST = "127.0.0.1"
 DEFAULT_PORT = 5000
+app = create_app()
 
 
 def main() -> int:
     port = int(os.environ.get("PORT", DEFAULT_PORT))  # ganti jika port 5000 terpakai
-    app = create_app()
     print(f"\n  Tic Tac Toe berjalan di http://{HOST}:{port}")
     print("  Tekan Ctrl+C untuk berhenti.\n")
     app.run(host=HOST, port=port, debug=False)
