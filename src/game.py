@@ -23,12 +23,21 @@ class GameStatus(Enum):
 class Game:
     """Mengatur jalannya satu ronde. Tidak melakukan I/O apa pun."""
 
-    def __init__(self, player_x: Player, player_o: Player, board: Optional[Board] = None) -> None:
+    def __init__(
+        self,
+        player_x: Player,
+        player_o: Player,
+        board: Optional[Board] = None,
+        first: Mark = Mark.X,
+    ) -> None:
         if player_x.mark is not Mark.X or player_o.mark is not Mark.O:
             raise ValueError("player_x harus bermark X dan player_o harus bermark O.")
         self.board: Board = board if board is not None else Board()
         self._players = {Mark.X: player_x, Mark.O: player_o}
-        self._current_mark = Mark.X  # X selalu jalan duluan
+        if first is Mark.EMPTY:
+            raise ValueError("first harus Mark.X atau Mark.O.")
+        self._first = first
+        self._current_mark = first  # default: X jalan duluan
         self._status = GameStatus.IN_PROGRESS
         self._update_status()
 
@@ -69,7 +78,7 @@ class Game:
 
     def reset(self) -> None:
         self.board.reset()
-        self._current_mark = Mark.X
+        self._current_mark = self._first
         self._update_status()
 
     # ---- Internal --------------------------------------------------------

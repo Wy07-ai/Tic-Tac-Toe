@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Tic Tac Toe: bermain{% endblock %}
+{% block body_class %}page-game{% endblock %}
+{% block content %}
+<main class="game" id="game"
+      data-mode="{{ cfg.mode }}" data-difficulty="{{ cfg.difficulty }}"
+      data-me="{{ cfg.mark }}" data-first="{{ cfg.first }}"
+      data-move-url="{{ url_for('api_move') }}" data-bot-url="{{ url_for('api_bot_move') }}"
+      data-menu-url="{{ url_for('menu') }}">
+  <header class="game-head">
+    <h1>Tic Tac Toe</h1>
+    <p id="mode-label"></p>
+  </header>
+
+  <section class="scoreboard" aria-label="Skor">
+    <div class="stat stat-a"><span id="label-a">Menang</span><strong id="score-a">0</strong></div>
+    <div class="stat stat-d"><span>Seri</span><strong id="score-d">0</strong></div>
+    <div class="stat stat-b"><span id="label-b">Kalah</span><strong id="score-b">0</strong></div>
+  </section>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <div class="board" id="board" role="group" aria-label="Papan Tic Tac Toe">
+    <svg class="board-lines" viewBox="0 0 300 300" aria-hidden="true">
+      <path class="win-line" id="win-line" pathLength="1" d="M0 0"/>
+      <path class="grid-line" pathLength="1" d="M100 10V290" style="--d:0s"/>
+      <path class="grid-line" pathLength="1" d="M200 10V290" style="--d:.08s"/>
+      <path class="grid-line" pathLength="1" d="M10 100H290" style="--d:.16s"/>
+      <path class="grid-line" pathLength="1" d="M10 200H290" style="--d:.24s"/>
+    </svg>
+    <div class="cells" id="cells"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="btn-again" type="button">Main Lagi</button>
+    <button class="btn btn-ghost sound-toggle" id="sound-toggle" type="button" aria-pressed="true">Suara: aktif</button>
+    <a class="btn btn-ghost" id="btn-menu" href="{{ url_for('menu') }}">Kembali ke Menu Utama</a>
+  </div>
+</main>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/game.js') }}" defer></script>{% endblock %}

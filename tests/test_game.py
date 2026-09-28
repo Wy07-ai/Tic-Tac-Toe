@@ -5,7 +5,7 @@ import unittest
 
 from src.board import Board, InvalidMoveError, Mark
 from src.game import Game, GameStatus
-from src.player import MinimaxBot, Player, RandomBot
+from src.player import Difficulty, MediumBot, MinimaxBot, Player, RandomBot, create_bot
 
 
 class ScriptedPlayer(Player):
@@ -61,6 +61,13 @@ class BoardTests(unittest.TestCase):
             self.assertEqual(board.winner(), Mark.O)
             self.assertEqual(board.winning_line(), line)
 
+    def test_from_cells_roundtrip(self) -> None:
+        cells = ["X", "", "O", "", "X", "", "", "", "O"]
+        self.assertEqual(Board.from_cells(cells).to_list(), cells)
+        for bad in (["X"] * 8, ["Z"] + [""] * 8, None):
+            with self.assertRaises(InvalidMoveError):
+                Board.from_cells(bad)
+
     def test_copy_is_independent(self) -> None:
         board = Board()
         clone = board.copy()
@@ -108,6 +115,14 @@ class GameTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             game.play_turn()
 
+    def test_first_mover_can_be_o(self) -> None:
+        game = Game(ScriptedPlayer(Mark.X, [1]), ScriptedPlayer(Mark.O, [2]), first=Mark.O)
+        self.assertEqual(game.current_player.mark, Mark.O)
+        game.play_turn()
+        self.assertEqual(game.current_player.mark, Mark.X)
+        game.reset()
+        self.assertEqual(game.current_player.mark, Mark.O)
+
     def test_wrong_marks_rejected(self) -> None:
         with self.assertRaises(ValueError):
             Game(ScriptedPlayer(Mark.O, []), ScriptedPlayer(Mark.X, []))
@@ -139,6 +154,44 @@ class BotTests(unittest.TestCase):
                     game.play_turn()
                 if game.status is GameStatus.WON:
                     self.assertIs(game.winner, bot)
+
+    def test_medium_takes_win_and_blocks(self) -> None:
+        bot = MediumBot("Bot", Mark.X, rng=random.Random(1), block_chance=1.0)
+        self.assertEqual(bot.choose_move(fill(Board(), x=[1, 2], o=[4, 5])), 3)  # menang
+        bot = MediumBot("Bot", Mark.O, rng=random.Random(1), block_chance=1.0)
+        self.assertEqual(bot.choose_move(fill(Board(), x=[1, 2], o=[5])), 3)  # blokir
+
+    def test_medium_always_plays_legal_moves(self) -> None:
+        rng = random.Random(7)
+        for _ in range(50):
+            game = Game(MediumBot("M", Mark.X, rng=rng), RandomBot("R", Mark.O))
+            while not game.is_over:
+                game.play_turn()
+
+    def test_medium_is_beatable_and_not_minimax(self) -> None:
+        random.seed(3)
+        results = set()
+        for _ in range(200):
+            game = Game(RandomBot("R", Mark.X), MediumBot("M", Mark.O))
+            while not game.is_over:
+                game.play_turn()
+            results.add(game.winner.mark if game.winner else None)
+        self.assertIn(Mark.X, results)  # random bot kadang menang lawan Medium
+
+    def test_hard_never_loses_when_second(self) -> None:
+        random.seed(5)
+        for _ in range(60):
+            game = Game(MediumBot("M", Mark.X), MinimaxBot("H", Mark.O))
+            while not game.is_over:
+                game.play_turn()
+            self.assertNotEqual(game.winner and game.winner.mark, Mark.X)
+
+    def test_difficulty_factory(self) -> None:
+        self.assertIsInstance(create_bot(Difficulty.EASY, Mark.X), RandomBot)
+        self.assertIsInstance(create_bot(Difficulty.MEDIUM, Mark.X), MediumBot)
+        self.assertIsInstance(create_bot(Difficulty.HARD, Mark.X), MinimaxBot)
+        with self.assertRaises(ValueError):
+            Difficulty.parse("impossible")
 
     def test_minimax_vs_minimax_is_draw(self) -> None:
         game = Game(MinimaxBot("A", Mark.X), MinimaxBot("B", Mark.O))
