@@ -1,0 +1,2 @@
+# Untuk menjalankan test dengan pytest (opsional). Game sendiri hanya butuh Python 3.10+.
+pytest>=7.0
