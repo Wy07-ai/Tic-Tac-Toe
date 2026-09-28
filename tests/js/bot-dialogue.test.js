@@ -1,7 +1,7 @@
 // Tes logika dialog bot. Jalankan: node --test tests/js   (Node 18+, tanpa dependensi)
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { LINES, MOODS, PERSONA, pickCategory, createSpeaker } = require("../../static/js/bot-dialogue.js");
+const { LINES, CONTEXT_LINES, MOODS, PERSONA, pickCategory, createSpeaker } = require("../../static/js/bot-dialogue.js");
 
 const LEVELS = ["easy", "medium", "hard"];
 const CATEGORIES = ["start", "rematch", "move", "block", "threat", "fork", "playerBlock", "win", "lose", "draw"];
@@ -11,7 +11,7 @@ test("setiap tingkat kesulitan punya persona dan semua kategori berisi variasi k
     assert.ok(PERSONA[level].name && PERSONA[level].title);
     for (const category of CATEGORIES) {
       const pool = LINES[level][category];
-      assert.ok(pool && pool.length >= 4, `${level}.${category} minimal 4 kalimat`);
+      assert.ok(pool && pool.length >= 6, `${level}.${category} minimal 6 kalimat`);
       assert.equal(new Set(pool).size, pool.length, `${level}.${category} tidak boleh ada duplikat`);
       assert.ok(MOODS[category][level], `mood ${category}.${level}`);
     }
@@ -61,6 +61,40 @@ test("semua kalimat dalam satu kategori akhirnya muncul (acak, bukan urutan teta
   const seen = new Set();
   for (let i = 0; i < 300; i++) seen.add(speaker.line("start").text);
   assert.equal(seen.size, LINES.easy.start.length);
+});
+
+test("dialog langkah menyesuaikan posisi papan dan tetap punya variasi", () => {
+  for (const level of LEVELS) {
+    const speaker = createSpeaker(level, () => 0);
+    for (const [move, key] of [[4, "center"], [0, "corner"], [1, "edge"]]) {
+      const reply = speaker.line("move", { move });
+      assert.ok(CONTEXT_LINES[level][key].includes(reply.text), `${level}.${key}`);
+      assert.equal(reply.mood, MOODS.move[level]);
+    }
+
+    const recent = [];
+    for (let i = 0; i < 8; i++) {
+      const text = speaker.line("move", { move: 4 }).text;
+      assert.ok(!recent.includes(text), `${level}.center mengulang terlalu cepat`);
+      recent.push(text);
+      if (recent.length > 2) recent.shift();
+    }
+  }
+});
+
+test("dialog ancaman mengenali langkah yang sekaligus memblokir", () => {
+  for (const level of LEVELS) {
+    const speaker = createSpeaker(level, () => 0);
+    const reply = speaker.line("threat", { blocks: true, threats: 1 });
+    assert.ok(CONTEXT_LINES[level].blockAndThreat.includes(reply.text));
+    assert.equal(reply.mood, MOODS.threat[level]);
+  }
+});
+
+test("konteks yang tidak cocok memakai kumpulan kalimat kategori biasa", () => {
+  const speaker = createSpeaker("medium", () => 0);
+  assert.ok(LINES.medium.move.includes(speaker.line("move", { move: 9 }).text));
+  assert.ok(LINES.medium.threat.includes(speaker.line("threat", { blocks: true, threats: 0 }).text));
 });
 
 test("tingkat kesulitan tidak dikenal jatuh ke medium; kategori tak dikenal -> null", () => {

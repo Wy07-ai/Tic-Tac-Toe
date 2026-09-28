@@ -40,9 +40,9 @@
     });
   }
 
-  function botSay(category) {
+  function botSay(category, context) {
     if (!chat || !category) return;
-    const reply = speaker.line(category);
+    const reply = speaker.line(category, context);
     if (reply) chat.say(reply.text, reply.mood);
   }
 
@@ -166,14 +166,15 @@
     const moverIsBot = isBot(turn);
     board = data.board;
     if (chat) {
-      const kind = data.insight && data.insight.kind;
+      const insight = data.insight || {};
+      const kind = insight.kind;
       botSay(BotDialogue.pickCategory({
         actor: moverIsBot ? "bot" : "player",
         status: data.status,
         winner: data.winner ? (isBot(data.winner) ? "bot" : "player") : null,
         kind,
         playerKind: lastPlayerKind,
-      }));
+      }), { ...insight, move: data.move });
       lastPlayerKind = moverIsBot ? null : kind;
     }
     if (data.status === "in_progress") {
