@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Tic Tac Toe: menu{% endblock %}
+{% block body_class %}page-menu{% endblock %}
+{% block content %}
+<main class="menu">
+  <section class="menu-intro">
+    <svg class="hero" viewBox="0 0 300 300" aria-hidden="true">
+      <path class="grid-line" pathLength="1" d="M100 10V290" style="--d:0s"/>
+      <path class="grid-line" pathLength="1" d="M200 10V290" style="--d:.1s"/>
+      <path class="grid-line" pathLength="1" d="M10 100H290" style="--d:.2s"/>
+      <path class="grid-line" pathLength="1" d="M10 200H290" style="--d:.3s"/>
+      <g class="hero-x" style="--d:.7s"><path pathLength="1" d="M28 28L72 72"/><path pathLength="1" d="M72 28L28 72"/></g>
+      <circle class="hero-o" pathLength="1" cx="150" cy="150" r="30" transform="rotate(-90 150 150)" style="--d:1.1s"/>
+      <g class="hero-x" style="--d:1.5s"><path pathLength="1" d="M228 228L272 272"/><path pathLength="1" d="M272 228L228 272"/></g>
+      <circle class="hero-o" pathLength="1" cx="250" cy="50" r="30" transform="rotate(-90 250 50)" style="--d:1.9s"/>
+    </svg>
+    <h1>Tic Tac Toe</h1>
+    <p class="lead">Tiga tanda sejajar menang. Atur permainanmu, lalu mulai.</p>
+  </section>
+
+  <form class="menu-form" action="{{ url_for('game') }}" method="get" id="menu-form">
+    <fieldset>
+      <legend>Mode permainan</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="mode" value="pvc" checked><span>Lawan Komputer</span></label>
+        <label class="choice"><input type="radio" name="mode" value="pvp"><span>Dua Pemain</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset id="difficulty-field">
+      <legend>Tingkat kesulitan</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="difficulty" value="easy"><span>Easy</span></label>
+        <label class="choice"><input type="radio" name="difficulty" value="medium" checked><span>Medium</span></label>
+        <label class="choice"><input type="radio" name="difficulty" value="hard"><span>Hard</span></label>
+      </div>
+      <p class="hint" id="difficulty-hint"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend id="mark-legend">Simbol kamu</legend>
+      <div class="choices">
+        <label class="choice choice-x"><input type="radio" name="mark" value="X" checked><span>X</span></label>
+        <label class="choice choice-o"><input type="radio" name="mark" value="O"><span>O</span></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Jalan duluan</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="first" value="me" checked><span id="first-me">Kamu</span></label>
+        <label class="choice"><input type="radio" name="first" value="opp"><span id="first-opp">Komputer</span></label>
+      </div>
+    </fieldset>
+
+    <button class="btn btn-primary btn-wide" type="submit">Mulai main</button>
+  </form>
+</main>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/menu.js') }}" defer></script>{% endblock %}
