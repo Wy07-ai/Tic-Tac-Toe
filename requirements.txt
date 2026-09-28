@@ -1,2 +1,3 @@
-# Untuk menjalankan test dengan pytest (opsional). Game sendiri hanya butuh Python 3.10+.
+Flask>=3.0
+# Untuk menjalankan test (opsional)
 pytest>=7.0

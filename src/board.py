@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable, Optional, Sequence
 
 CellFormatter = Callable[[int, "Mark"], str]
 
@@ -49,6 +49,25 @@ class Board:
 
     def __init__(self) -> None:
         self._cells: list[Mark] = [Mark.EMPTY] * self.CELL_COUNT
+
+    # ---- Konversi dari/ke list (dipakai API web) -------------------------
+    @classmethod
+    def from_cells(cls, cells: Sequence[str]) -> Board:
+        """Bangun papan dari list 9 isian: "X", "O", atau "" (kosong)."""
+        if not isinstance(cells, (list, tuple)) or len(cells) != cls.CELL_COUNT:
+            raise InvalidMoveError("Papan harus berupa list berisi 9 kotak.")
+        board = cls()
+        for index, raw in enumerate(cells):
+            if raw in ("", " "):
+                continue
+            if raw not in ("X", "O"):
+                raise InvalidMoveError("Isi kotak hanya boleh 'X', 'O', atau kosong.")
+            board._cells[index] = Mark(raw)
+        return board
+
+    def to_list(self) -> list[str]:
+        """Kebalikan dari from_cells: kotak kosong menjadi string kosong."""
+        return ["" if cell is Mark.EMPTY else cell.value for cell in self._cells]
 
     # ---- Akses & validasi ------------------------------------------------
     @staticmethod

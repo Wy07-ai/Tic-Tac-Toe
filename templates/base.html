@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="id" data-theme="{{ default_theme }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="{{ theme_colors[default_theme] }}" id="theme-color-meta">
+  <title>{% block title %}Tic Tac Toe{% endblock %}</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bevan&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Orbitron:wght@600..800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {# Terapkan tema tersimpan sebelum halaman digambar agar tidak berkedip. #}
+  <script>
+    (function () {
+      var colors = {{ theme_colors|tojson }}, theme = "{{ default_theme }}";
+      try {
+        var saved = localStorage.getItem("ttt:theme");
+        if (saved === "dark") saved = "classic";   // pengaturan lama: mode gelap
+        if (saved === "light") saved = "pastel";   // pengaturan lama: mode terang
+        if (saved && colors[saved]) theme = saved;
+      } catch (e) {}
+      document.documentElement.dataset.theme = theme;
+      document.getElementById("theme-color-meta").content = colors[theme];
+    })();
+  </script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<div class="site-controls">
+  <button class="btn btn-ghost settings-open" id="settings-open" type="button" aria-haspopup="dialog" aria-label="Pengaturan">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+      <path d="M4 7h9M19 7h1M4 12h3M13 12h7M4 17h9M19 17h1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="16" cy="7" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="10" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="16" cy="17" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <span>Pengaturan</span>
+  </button>
+</div>
+
+{% block content %}{% endblock %}
+
+<dialog class="settings" id="settings-dialog" aria-labelledby="settings-title">
+  <div class="settings-card">
+    <header class="settings-head">
+      <h2 id="settings-title">Pengaturan</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Tutup pengaturan">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <section class="settings-section" aria-labelledby="audio-title">
+      <h3 id="audio-title">Audio</h3>
+
+      <div class="field">
+        <label for="vol-master">Volume utama</label>
+        <div class="slider-row">
+          <input type="range" id="vol-master" min="0" max="100" step="1" value="70" aria-describedby="vol-master-out">
+          <output id="vol-master-out" for="vol-master">70%</output>
+        </div>
+      </div>
+
+      <label class="switch-row" for="sw-bgm">
+        <span class="switch-text">Musik latar (BGM)<small id="sw-bgm-state">Aktif</small></span>
+        <input type="checkbox" role="switch" id="sw-bgm" checked>
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+
+      <label class="switch-row" for="sw-sfx">
+        <span class="switch-text">Efek suara (SFX)<small id="sw-sfx-state">Aktif</small></span>
+        <input type="checkbox" role="switch" id="sw-sfx" checked>
+        <span class="switch" aria-hidden="true"></span>
+      </label>
+      <p class="settings-note">Browser baru mengizinkan suara setelah kamu mengetuk atau menekan sesuatu di halaman, jadi musik mulai pada interaksi pertama.</p>
+    </section>
+
+    <section class="settings-section" aria-labelledby="theme-title">
+      <h3 id="theme-title">Tema papan</h3>
+      <div class="theme-grid" role="radiogroup" aria-labelledby="theme-title">
+        {% for t in themes %}
+        <label class="theme-card" data-theme="{{ t.id }}">
+          <input type="radio" name="board-theme" value="{{ t.id }}" data-color="{{ t.color }}">
+          <span class="theme-preview" aria-hidden="true">
+            <svg viewBox="0 0 60 60">
+              <path class="p-grid" d="M20 6V54M40 6V54M6 20H54M6 40H54"/>
+              <path class="p-x" d="M9 9L17 17M17 9L9 17"/>
+              <circle class="p-o" cx="30" cy="30" r="5.5"/>
+              <path class="p-x" d="M43 43L51 51M51 43L43 51"/>
+            </svg>
+          </span>
+          <span class="theme-name">{{ t.name }}</span>
+          <span class="theme-desc">{{ t.desc }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </section>
+
+    <footer class="settings-foot">
+      <button class="btn btn-primary" type="button" data-close>Selesai</button>
+    </footer>
+  </div>
+</dialog>
+
+<script src="{{ url_for('static', filename='js/audio.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/settings.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
