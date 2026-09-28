@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#eef2f8">
+  <meta name="theme-color" content="#eef2f8" id="theme-color-meta">
   <title>{% block title %}Tic Tac Toe{% endblock %}</title>
   <link rel="icon" href="data:,">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,7 +12,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
+<div class="site-controls">
+  <button class="btn btn-ghost theme-toggle" id="theme-toggle" type="button" aria-pressed="false">Mode gelap</button>
+</div>
 {% block content %}{% endblock %}
+<script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
