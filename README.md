@@ -1,6 +1,13 @@
-# 🎮 Tic Tac Toe (Python CLI)
+# 🎮 Tic Tac Toe
 
-Game Tic Tac Toe berbasis terminal dengan arsitektur modular, OOP, dan type hinting.
+Game Tic Tac Toe dengan dua antarmuka: web (HTML, CSS, JavaScript) dan terminal Python.
+
+## Versi Web
+- **Player vs Player** atau **Player vs Bot**
+- Kesulitan *Strategist* dengan **Minimax + alpha-beta pruning** (tidak pernah kalah), atau *Casual* dengan langkah acak
+- Pilih simbol, papan interaktif, sorotan kemenangan, dan papan skor antar ronde
+
+Buka `index.html` langsung di browser. Tidak perlu server atau dependensi.
 
 ## Fitur
 - **Player vs Player** (lokal, bergantian)
@@ -12,6 +19,9 @@ Game Tic Tac Toe berbasis terminal dengan arsitektur modular, OOP, dan type hint
 ## Struktur
 ```
 tic-tac-toe/
+├── index.html     # Antarmuka web
+├── style.css      # Tampilan responsif
+├── app.js         # Model game OOP dan bot AI
 ├── src/
 │   ├── board.py    # Papan 3x3, validasi, render
 │   ├── player.py   # Player, HumanPlayer, RandomBot, MinimaxBot
@@ -25,7 +35,7 @@ tic-tac-toe/
 Prinsip desain: `Game` tidak melakukan I/O; `HumanPlayer` menerima *move provider*
 dari UI, sehingga logika mudah diuji dan UI mudah diganti (misalnya GUI/web).
 
-## Menjalankan
+## Menjalankan Versi Python
 Butuh **Python 3.10+** (tanpa dependensi eksternal untuk bermain).
 
 ```bash
