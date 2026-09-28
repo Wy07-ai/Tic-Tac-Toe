@@ -1,65 +1,54 @@
-# 🎮 Tic Tac Toe
+# Tic Tac Toe (Flask)
 
-Game Tic Tac Toe dengan dua antarmuka: web (HTML, CSS, JavaScript) dan terminal Python.
+Game Tic Tac Toe berbasis web dengan backend Python/Flask.
 
-## Versi Web
-- **Player vs Player** atau **Player vs Bot**
-- Kesulitan *Strategist* dengan **Minimax + alpha-beta pruning** (tidak pernah kalah), atau *Casual* dengan langkah acak
-- Pilih simbol, papan interaktif, sorotan kemenangan, dan papan skor antar ronde
+- **Mode**: Player vs Player atau Player vs Computer
+- **Bot AI** (`src/player.py`):
+  - **Easy**: langkah acak
+  - **Medium**: menang jika bisa, memblokir lawan (kadang lengah), selain itu acak dengan preferensi tengah/sudut
+  - **Hard**: Minimax + alpha-beta pruning, tidak pernah kalah
+- Pilih simbol (X/O) dan siapa yang jalan duluan, skorboard (Menang, Seri, Kalah), animasi gambar tanda dan garis kemenangan, responsif
 
-Buka `index.html` langsung di browser. Tidak perlu server atau dependensi.
+## Menjalankan
 
-## Fitur
-- **Player vs Player** (lokal, bergantian)
-- **Player vs Komputer**
-  - *Sulit*: algoritma **Minimax + alpha-beta pruning** (tidak pernah kalah)
-  - *Mudah*: langkah acak
-- Tampilan terminal berwarna, kemenangan disorot, papan bernomor 1-9, papan skor antar ronde
+```bash
+pip install -r requirements.txt
+python main.py
+```
+
+Buka **http://127.0.0.1:5000**. Jika port 5000 terpakai (misalnya AirPlay Receiver di macOS):
+`PORT=5001 python main.py` (Windows PowerShell: `$env:PORT=5001; python main.py`).
 
 ## Struktur
+
 ```
 tic-tac-toe/
-├── index.html     # Antarmuka web
-├── style.css      # Tampilan responsif
-├── app.js         # Model game OOP dan bot AI
+├── main.py            # Entry point: menyalakan server lokal
 ├── src/
-│   ├── board.py    # Papan 3x3, validasi, render
-│   ├── player.py   # Player, HumanPlayer, RandomBot, MinimaxBot
-│   ├── game.py     # State game, giliran, menang/seri
-│   └── ui.py       # Antarmuka CLI
-├── tests/test_game.py
-├── main.py         # Entry point
-└── requirements.txt
+│   ├── board.py       # Papan 3x3, validasi, konversi list <-> Board
+│   ├── game.py        # State ronde, giliran, menang/seri
+│   ├── player.py      # Human, RandomBot, MediumBot, MinimaxBot, create_bot
+│   └── web.py         # App Flask: halaman + API
+├── templates/         # base.html, index.html (menu), game.html (papan)
+├── static/            # css/style.css, js/menu.js, js/game.js
+└── tests/             # test_game.py (logika & bot), test_api.py (endpoint)
 ```
 
-Prinsip desain: `Game` tidak melakukan I/O; `HumanPlayer` menerima *move provider*
-dari UI, sehingga logika mudah diuji dan UI mudah diganti (misalnya GUI/web).
+## API
 
-## Menjalankan Versi Python
-Butuh **Python 3.10+** (tanpa dependensi eksternal untuk bermain).
+Server stateless: klien mengirim papan (list 9 isian `"X"`, `"O"`, atau `""`) dan giliran,
+server memvalidasi lalu membalas papan baru. Indeks kotak 0-8 (kiri-atas ke kanan-bawah).
+
+| Endpoint | Body | Fungsi |
+|---|---|---|
+| `POST /api/move` | `{board, turn, position}` | Terapkan langkah pemain |
+| `POST /api/bot-move` | `{board, turn, difficulty}` | Bot (`easy`/`medium`/`hard`) memilih dan menerapkan langkah |
+
+Respons: `{board, status: in_progress|won|draw, winner, winning_line, next, move}`.
+Input tidak valid (kotak terisi, giliran salah, papan mustahil, permainan selesai) dibalas HTTP 400 `{error}`.
+
+## Tes
 
 ```bash
-python main.py        # di Windows bisa: py main.py
-```
-
-Kotak diberi nomor:
-```
- 1 │ 2 │ 3
-───┼───┼───
- 4 │ 5 │ 6
-───┼───┼───
- 7 │ 8 │ 9
-```
-Ketik `q` kapan saja untuk keluar. Set `NO_COLOR=1` untuk mematikan warna.
-
-## Menjalankan Unit Test
-Dari folder root proyek:
-
-```bash
-# Tanpa instalasi apa pun (unittest bawaan Python)
-python -m unittest discover -s tests -v
-
-# Atau dengan pytest
-pip install -r requirements.txt
 python -m pytest -v
 ```

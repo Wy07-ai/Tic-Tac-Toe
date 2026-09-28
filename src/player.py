@@ -1,4 +1,4 @@
-"""Class Player: Human, RandomBot, dan MinimaxBot (AI sulit dikalahkan)."""
+"""Class Player: Human, RandomBot (Easy), MediumBot, dan MinimaxBot (Hard)."""
 
 from __future__ import annotations
 
@@ -6,12 +6,26 @@ import math
 import random
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable
+from typing import Callable, Optional
 
 from .board import Board, Mark
 
 # Fungsi yang meminta langkah dari manusia (disediakan oleh UI).
 MoveProvider = Callable[[Board, "Player"], int]
+
+
+class Difficulty(Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+
+    @classmethod
+    def parse(cls, raw: object) -> Difficulty:
+        try:
+            return cls(str(raw).lower())
+        except ValueError:
+            valid = ", ".join(d.value for d in cls)
+            raise ValueError(f"Tingkat kesulitan tidak dikenal. Pilih salah satu: {valid}.") from None
 
 
 class Player(ABC):
@@ -43,7 +57,7 @@ class HumanPlayer(Player):
 
 
 class RandomBot(Player):
-    """Bot mudah: memilih kotak kosong secara acak."""
+    """Easy: memilih kotak kosong secara acak."""
 
     is_bot = True
 
@@ -51,8 +65,60 @@ class RandomBot(Player):
         return random.choice(board.available_moves())
 
 
+class MediumBot(Player):
+    """Medium: logika ofensif/defensif sederhana, sisanya acak.
+
+    Urutan keputusan:
+      1. Jika bisa menang dalam satu langkah, ambil (ofensif).
+      2. Jika lawan hampir menang, blokir (defensif). Kadang lengah, sesuai
+         `block_chance`, supaya masih bisa dikalahkan.
+      3. Selain itu, 50% memilih tengah/sudut, sisanya kotak acak.
+    Bot ini tidak merencanakan jebakan (fork), jadi pemain yang cermat bisa menang.
+    """
+
+    is_bot = True
+    PREFERRED = (5, 1, 3, 7, 9)  # tengah lalu sudut
+
+    def __init__(
+        self,
+        name: str,
+        mark: Mark,
+        rng: Optional[random.Random] = None,
+        block_chance: float = 0.85,
+    ) -> None:
+        super().__init__(name, mark)
+        self._rng = rng or random.Random()
+        self._block_chance = block_chance
+
+    def choose_move(self, board: Board) -> int:
+        winning = self._finishing_move(board, self.mark)
+        if winning is not None:
+            return winning
+
+        if self._rng.random() < self._block_chance:
+            block = self._finishing_move(board, self.mark.opponent)
+            if block is not None:
+                return block
+
+        moves = board.available_moves()
+        if self._rng.random() < 0.5:
+            good = [m for m in self.PREFERRED if m in moves]
+            if good:
+                return self._rng.choice(good)
+        return self._rng.choice(moves)
+
+    @staticmethod
+    def _finishing_move(board: Board, mark: Mark) -> Optional[int]:
+        """Posisi yang membuat `mark` menang seketika, atau None."""
+        for line in Board.WIN_LINES:
+            cells = [board.get(p) for p in line]
+            if cells.count(mark) == 2 and cells.count(Mark.EMPTY) == 1:
+                return line[cells.index(Mark.EMPTY)]
+        return None
+
+
 class MinimaxBot(Player):
-    """Bot sulit: Minimax + alpha-beta pruning. Tidak akan pernah kalah."""
+    """Hard: Minimax + alpha-beta pruning. Tidak akan pernah kalah."""
 
     is_bot = True
 
@@ -102,13 +168,10 @@ class MinimaxBot(Player):
         return best
 
 
-class Difficulty(Enum):
-    HARD = "hard"
-    EASY = "easy"
-
-
 def create_bot(difficulty: Difficulty, mark: Mark, name: str = "Komputer") -> Player:
     """Factory untuk membuat bot sesuai tingkat kesulitan."""
     if difficulty is Difficulty.HARD:
         return MinimaxBot(name, mark)
+    if difficulty is Difficulty.MEDIUM:
+        return MediumBot(name, mark)
     return RandomBot(name, mark)
